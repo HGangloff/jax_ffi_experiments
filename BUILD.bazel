@@ -1,0 +1,8 @@
+cc_binary( # no header here, we are not building a library
+    name = "main",
+    srcs = ["main.cpp"],
+    visibility = ["//visibility:public"],
+    deps = ["//lib:gibbs_sampler_lib"]
+)
+
+
