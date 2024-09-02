@@ -11,10 +11,6 @@ import numpy as np
 
 key = jax.random.PRNGKey(0)
 
-from mrfx.models import Potts
-from mrfx.samplers import GibbsSampler
-from mrfx.experiments import time_complete_sampling
-
 import gibbs_sampler as gibbs_sampler_lib
 
 jex.ffi.register_ffi_target("gibbs_sampler", gibbs_sampler_lib.gibbs_sampler(), platform="cpu")
@@ -46,7 +42,7 @@ def gibbs_sampler_cpp(rows, cols, Q, beta, n_iter):
         iter=np.int32(n_iter),
     )
 
-# Real execution
+
 rows = 200
 cols = 200
 Q = 3
@@ -58,17 +54,3 @@ res = gibbs_sampler_cpp(rows, cols, Q, beta, n_iter)
 end = time.time()
 
 print(f"Time: {end - start} seconds")
-
-# TODO : test the following on GPU
-key, subkey = jax.random.split(key, 2)
-times, n_iterations = time_complete_sampling(
-    GibbsSampler,
-    Potts,
-    subkey,
-    [Q],
-    [(rows, cols)],
-    1,
-    kwargs_sampler={"eps":-1, "max_iter":1000}, # impossible eps so that we force max_iter to be perform
-    kwargs_model={"beta":1.}
-)
-print(times)
