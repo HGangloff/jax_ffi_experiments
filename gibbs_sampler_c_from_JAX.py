@@ -8,6 +8,7 @@ import jax
 import jax.extend as jex
 import jax.numpy as jnp
 import numpy as np
+import matplotlib.pyplot as plt
 
 key = jax.random.PRNGKey(0)
 
@@ -54,3 +55,7 @@ res = gibbs_sampler_cpp(rows, cols, Q, beta, n_iter)
 end = time.time()
 
 print(f"Time: {end - start} seconds")
+
+fig = plt.figure()
+plt.imshow(res, cmap="gray")
+fig.savefig('c_from_JAX.png')

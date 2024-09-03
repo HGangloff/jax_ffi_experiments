@@ -5,11 +5,35 @@
 #include <cstdlib>
 #include <ctime>
 #include <chrono>
+#include <png++/png.hpp>
 
 #include "lib/gibbs_sampler.h"
 
 using namespace std;
 using namespace std::chrono;  // Use the chrono namespace
+
+void saveImageAsPNG(const char* filename, int* image, int rows, int cols) {
+    try {
+        // Create a grayscale image
+        png::image<png::rgb_pixel> img(cols, rows);
+
+        // Copy data from the int* array to the png++ image
+        for (int y = 0; y < rows; ++y) {
+            for (int x = 0; x < cols; ++x) {
+                img[y][x] = png::rgb_pixel(
+                    image[y * cols + x] / 3. * 255,
+                    image[y * cols + x] / 3. * 255,
+                    image[y * cols + x] / 3. * 255
+                );
+            }
+        }
+
+        // Save the image
+        img.write(filename);
+    } catch (std::exception& e) {
+        std::cerr << "Failed to save PNG file: " << e.what() << std::endl;
+    }
+}
 
 // Main function
 int main() {
@@ -35,8 +59,7 @@ int main() {
 
     cout << "Execution time: " << duration.count() << " milliseconds" << endl;
 
-    // cout << "Final image after Gibbs sampling:" << endl;
-    // printImage(image, rows, cols);
+    saveImageAsPNG("pure_cpp.png", image, rows, cols);
 
     // Free allocated memory
     delete[] image;
