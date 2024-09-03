@@ -2,7 +2,7 @@
 
 In this tutorial, we will explore the `jax.extend.ffi` module, with a tutorial available [here](https://jax.readthedocs.io/en/latest/ffi.html). Specifically, we will adapt this module to use a naive Gibbs sampler algorithm written in C++ from JAX.
 
-# C++ Code
+# C++ code
 
 We have a small C++ library that implements a naive version of the Gibbs sampler. The three functions it offers are available in `lib/gibbs_sampler.h`:
 
@@ -108,9 +108,7 @@ Let's keep this value in mind as a reference for later. Also, note the illustrat
 
 ### XLA wrapping
 
-### Wrapping in XLA
-
-As indicated in the only two available tutorials on the subject (in the [JAX documentation](https://jax.readthedocs.io/en/latest/ffi.html) and the [XLA documentation](https://openxla.org/xla/custom_call)), we will need to wrap the functions of our library in the XLA *custom call* API.
+As indicated in the two available tutorials on the subject (in the [JAX documentation](https://jax.readthedocs.io/en/latest/ffi.html) and the [XLA documentation](https://openxla.org/xla/custom_call)), we will need to wrap the functions of our library in the XLA *custom call* API.
 
 We start by downloading the API in three files, `api.h`, `c_api.h`, and `ffi.h`, which we place in `lib/xla/ffi/api/`. We then create a function `GibbsSamplerImpl` that will wrap `initialize` and `RunGibbsSampler` available in `gibbs_sampler.h`. This wrapping is done using specific objects: `Buffer` (representing `jax.numpy` arrays), `Datatype`, `Error`, `Bind`, and `Attr`. These objects act as intermediaries between the `jax.numpy` data structures and C++. Their usage is described in the tutorials mentioned above.
 
@@ -190,8 +188,6 @@ Note that this rule requires the execution of the `gibbs_sampler_lib` rule.
 
 ### Creating the Python Module
 
-### Creating the Python Module
-
 As in the *C++ from Python* tutorial, we will use `pybind` and `PyCapsule` for this part of the operations. We will create a Python module called `gibbs_sampler`, which will contain a function also called `gibbs_sampler`. Calling this function will return a `PyCapsule` containing the `GibbsSampler` function defined at the end of the previous section. The code that accomplishes this is in `lib/gibbs_sampler_xla_pybind.cc`.
 
 ```cpp
@@ -259,7 +255,7 @@ end = time.time()
 print(f"Time: {end - start} seconds")
 ```
 
-L'exécution de ce script Python donne :
+Running this script gives:
 
 ```bash
 Time: 3.9689433574676514 seconds
@@ -310,9 +306,6 @@ times, n_iterations = time_complete_sampling(
 )
 print("JAX on CPU", times)
 ```
-
-On note un temps d'exécution affiché de $7.7714$ secondes pour un temps de
-compulation de $7.3613$. 
 
 We note a displayed execution time of $7.7714$ seconds for a compilation time of $7.3613$.
 
