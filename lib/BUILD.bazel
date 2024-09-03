@@ -6,51 +6,35 @@ cc_library(
     name = "gibbs_sampler_lib",
     srcs = ["gibbs_sampler.cpp"],
     hdrs = [
-        "gibbs_sampler.h",
+        "gibbs_sampler.h", # These headers are intended to be included by other libraries or binaries that depend on this library.
     ],
-    includes = ["."],
     copts = ["-std=c++17"],
     visibility = ["//visibility:public"],
 )
 
 cc_library(
     name = "gibbs_sampler_xla_lib",
-    srcs = ["gibbs_sampler_xla.cpp"],
-    hdrs = [
-        "gibbs_sampler_xla.h",
+    srcs = [
         "xla/ffi/api/c_api.h",
         "xla/ffi/api/ffi.h",
         "xla/ffi/api/api.h",
+        "gibbs_sampler_xla.cpp",
+            ], # When deciding whether to put a header into hdrs or srcs, you should ask whether you want consumers of this library to be able to directly include it
+    hdrs = [
+        "gibbs_sampler_xla.h",
     ],
-    includes = ["."],
+    includes = [ # need to use include -I option is not available due to sandbox stuff
+            ".", # adding to srcs or hdrs does not include
+    ],
     copts = ["-std=c++17 -rdynamic"], # -rdynamic to use extern
     deps = ["//lib:gibbs_sampler_lib"],
     visibility = ["//visibility:public"],
 )
 
-pybind_extension( # must be in two steps (first pybind_library then pybind_extension)
+pybind_extension( # must be in two steps (first cc_library then pybind_extension)
     name = "gibbs_sampler", # must match the pybind module name
     srcs = ["gibbs_sampler_xla_pybind.cc"],
     deps = ["//lib:gibbs_sampler_xla_lib"],
     copts = ["-std=c++17 -rdynamic"]
 )
 
-cc_library(
-    name = "rms_norm_lib",
-    srcs = ["rms_norm.cc"],
-    hdrs = [
-        "rms_norm.hpp",
-        "xla/ffi/api/c_api.h",
-        "xla/ffi/api/ffi.h",
-        "xla/ffi/api/api.h",
-    ],
-    includes = ["."],
-    copts = ["-std=c++17"]
-)
-
-pybind_extension( # must be in two steps (first pybind_library then pybind_extension)
-    name = "rms_norm", # must match python module name
-    srcs = ["rms_norm_pybind.cc"],
-    deps = ["//lib:rms_norm_lib"],
-    copts = ["-std=c++17"]
-)

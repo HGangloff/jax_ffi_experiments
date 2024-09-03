@@ -2,6 +2,8 @@ cc_binary( # no header here, we are not building a library
     name = "main",
     srcs = ["gibbs_sampler_cpp.cpp"],
     visibility = ["//visibility:public"],
+    copts = ["-I/usr/include/libpng16"],
+    linkopts = ["-lpng16"],
     deps = ["//lib:gibbs_sampler_lib"]
 )
 
