@@ -65,7 +65,7 @@ int main() {
 The above file is compiled and executed with the command:
 
 ```bash
-bazel build main && bazel-bin/main
+bazel build --enable_workspace main && bazel-bin/main
 ```
 
 The build main instruction is found in `BUILD.bazel` (this is a simple executable `cc_binary` compilation):
@@ -220,7 +220,7 @@ Note the dependency on the `gibbs_sampler_xla_lib` rule.
 Finally, the Python module can be compiled with the simple command:
 
 ```bash
-bazel build //lib:gibbs_sampler
+bazel build --enable_workspace //lib:gibbs_sampler
 ```
 
 ### Using the Python Module with `jax.extend.ffi`
