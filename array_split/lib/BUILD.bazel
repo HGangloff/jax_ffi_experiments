@@ -1,0 +1,40 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
+load("@pybind11_bazel//:build_defs.bzl", "pybind_library")
+
+cc_binary( # no header here, we are not building a library
+    name = "main",
+    srcs = [
+        "xla/ffi/api/c_api.h",
+        "xla/ffi/api/ffi.h",
+        "xla/ffi/api/api.h",
+        "split_array_xla.cpp"
+    ],
+    includes=['.'],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "split_array_xla_lib",
+    srcs = [
+        "xla/ffi/api/c_api.h",
+        "xla/ffi/api/ffi.h",
+        "xla/ffi/api/api.h",
+        "split_array_xla.cpp",
+            ], # When deciding whether to put a header into hdrs or srcs, you should ask whether you want consumers of this library to be able to directly include it
+    hdrs = [
+        "split_array_xla.h"
+    ],
+    includes = [ # need to use include -I option is not available due to sandbox stuff
+            ".", # adding to srcs or hdrs does not include
+    ],
+    copts = ["-std=c++17"],
+    visibility = ["//visibility:public"],
+)
+
+pybind_extension( # must be in two steps (first cc_library then pybind_extension)
+    name = "split_array", # must match the pybind module name
+    srcs = ["split_array_xla_pybind.cc"],
+    deps = ["//lib:split_array_xla_lib"],
+    copts = ["-std=c++17"]
+)
