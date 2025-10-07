@@ -8,21 +8,32 @@ namespace ffi = xla::ffi;
 using namespace std;
 
 
+// NOTE that AnyBuffer should be the prefered way since assigning a rank then
+// causes problem when vmapping
 ffi::Error split_jnp_array_(
-    ffi::BufferR1<ffi::DataType::F32> input_array,
-    ffi::BufferR1<ffi::DataType::S32> size_for_subarrays,
+    ffi::AnyBuffer input_array,
+    ffi::AnyBuffer size_for_subarrays,
     ffi::RemainingRets rets,
     int num_parts
 ) {
 
-    auto size_for_subarrays_ = size_for_subarrays.typed_data();
-    float* ptr = input_array.typed_data();
+    int* size_for_subarrays_ = reinterpret_cast<int *>(size_for_subarrays.untyped_data());
+    float* ptr = reinterpret_cast<float *>(input_array.untyped_data());
+    auto dims = input_array.dimensions();
+    // std::cout << dims.front() << ", " << dims.back() << ", " << dims.size() << "\n";
+
+    int offset;
+    if (dims.size() == 1) {
+        offset = 1;
+    } else {
+        offset = dims.front();
+    }
+
     for (int i=0; i < num_parts; i++) {
-        ffi::Result<ffi::BufferR1<ffi::DataType::F32>> ret =
-            rets.get<ffi::BufferR1<ffi::DataType::F32>>(i).value();
-        memcpy(ret->untyped_data(), ptr, size_for_subarrays_[i] * 4); // size in bytes
+        ffi::Result<ffi::AnyBuffer> ret = rets.get<ffi::AnyBuffer>(i).value();
+        memcpy(ret->untyped_data(), ptr, size_for_subarrays_[i] * 4 * offset); // size in bytes
                                                  // (float=4bytes)
-        ptr += size_for_subarrays_[i];
+        ptr += size_for_subarrays_[i] * offset;
     }
 
     return ffi::Error::Success();
@@ -32,9 +43,64 @@ XLA_FFI_DEFINE_HANDLER_SYMBOL(
     split_jnp_array,
     split_jnp_array_,
     ffi::Ffi::Bind()
-        .Arg<ffi::BufferR1<ffi::DataType::F32>>()
-        .Arg<ffi::BufferR1<ffi::DataType::S32>>()
+        .Arg<ffi::AnyBuffer>()
+        .Arg<ffi::AnyBuffer>()
         .RemainingRets()
+        .Attr<int>("num_parts")
+);
+
+// NOTE that AnyBuffer should be the prefered way since assigning a rank then
+// causes problem when vmapping
+ffi::Error split_jnp_array_bwd_(
+    ffi::RemainingArgs args,
+    ffi::Result<ffi::AnyBuffer> ret_array,
+    int num_parts
+) {
+
+    float* ptr = reinterpret_cast<float *>(ret_array->untyped_data());
+
+    ffi::AnyBuffer arg = args.get<ffi::AnyBuffer>(0).value();
+    //std::cout << ret_array->element_count() << "\n";
+    auto dims = arg.dimensions();
+    //std::cout << dims.front() << ", " << dims.back() << ", " << dims.size() << "\n";
+
+    int offset;
+    if (dims.size() == 1) {
+        offset = 1;
+    } else {
+        offset = dims.front();
+    }
+
+    // for all the parts here I must consider a rank 2 buffer with batch_dim =
+    // dim.front() and array dim = dim.back()
+    // dim.size() == rank!
+    //
+    int cumulative_arg_size = 0;
+    for (int i=0; i < num_parts; i++) {
+        ffi::AnyBuffer arg = args.get<ffi::AnyBuffer>(i).value();
+        auto dims = arg.dimensions();
+        float* ptr_arg = static_cast<float *>(arg.untyped_data());
+
+        // NOTE we need to save the return array in a row major order which
+        // I cannot explain
+        for (int j = 0; j < dims.front(); j += 1) {
+            for (int k = 0; k < dims.back(); k += 1) {
+                ptr[j + k * dims.front() + cumulative_arg_size] = *(ptr_arg + k + j * dims.back());
+
+            }
+        }
+        cumulative_arg_size += arg.element_count();
+    }
+
+    return ffi::Error::Success();
+}
+
+XLA_FFI_DEFINE_HANDLER_SYMBOL(
+    split_jnp_array_bwd,
+    split_jnp_array_bwd_,
+    ffi::Ffi::Bind()
+        .RemainingArgs()
+        .Ret<ffi::AnyBuffer>()
         .Attr<int>("num_parts")
 );
 

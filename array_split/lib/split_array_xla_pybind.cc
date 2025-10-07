@@ -7,5 +7,6 @@ pybind11::capsule EncapsulateFunction(T* fn) {
 }
 
 PYBIND11_MODULE(split_array, m) {   // please match the pybind_extension target name
-  m.def("split_array", []() { return EncapsulateFunction(split_jnp_array); });
+  m.def("split_jnp_array", []() { return EncapsulateFunction(split_jnp_array); });
+  m.def("split_jnp_array_bwd", []() { return EncapsulateFunction(split_jnp_array_bwd); });
 }
